@@ -1,0 +1,7 @@
+{
+  "jobs": [
+    {"id": "9b7b5987bcd6", "name": "Fixture Build Worker - agentic (Mason)", "enabled": true, "state": "scheduled", "paused_at": null, "paused_reason": null, "schedule_display": "every 120m", "model": "fixture-build-model", "provider": "fixture-provider", "skills": ["wolftac-build"], "last_run_at": "@now-2h", "last_status": "ok", "last_error": null, "next_run_at": "@now+5m", "failure_streak": 0, "prompt": "FIXTURE PROMPT MUST NEVER APPEAR"},
+    {"id": "1dd429fe03b2", "name": "Fixture Build Worker - crm (Mason)", "enabled": true, "state": "scheduled", "paused_at": null, "paused_reason": null, "schedule_display": "every 120m", "model": "fixture-build-model", "provider": "fixture-provider", "skills": ["wolftac-build"], "last_run_at": "@now-30m", "last_status": "ok", "last_error": null, "next_run_at": "@now+90m", "failure_streak": 0, "prompt": "FIXTURE PROMPT MUST NEVER APPEAR"}
+  ],
+  "updated_at": "@now-30m"
+}

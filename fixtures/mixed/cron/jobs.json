@@ -1,0 +1,11 @@
+{
+  "jobs": [
+    {"id": "1a9fb621f161", "name": "Wolftac Factory Gatekeeper", "enabled": true, "state": "scheduled", "paused_at": null, "paused_reason": null, "schedule_display": "every 30m", "model": null, "provider": null, "skills": [], "last_run_at": "@now-10m", "last_status": "ok", "last_error": null, "next_run_at": "@now+20m", "failure_streak": 0, "prompt": "FIXTURE PROMPT MUST NEVER APPEAR", "base_url": "http://fixture.invalid", "workdir": "C:\fixture"},
+    {"id": "a1ca59d16be5", "name": "ROLLBACK (paused) Fixture Build Worker - agentic", "enabled": false, "state": "paused", "paused_at": "@now-6d", "paused_reason": "fixture rollback", "schedule_display": "every 120m", "model": "fixture-model", "provider": "fixture-provider", "skills": ["wolftac-build"], "last_run_at": "@now-6d", "last_status": "ok", "last_error": null, "next_run_at": null, "failure_streak": 0},
+    {"id": "66efec8197dc", "name": "ROLLBACK (paused) Fixture Build Worker - crm", "enabled": false, "state": "paused", "paused_at": "@now-6d", "paused_reason": "fixture rollback", "schedule_display": "every 120m", "model": "fixture-model", "provider": "fixture-provider", "skills": ["wolftac-build"], "last_run_at": "@now-6d", "last_status": "ok", "last_error": null, "next_run_at": null, "failure_streak": 0},
+    {"id": "a8004c5f3bab", "name": "ROLLBACK (paused) Fixture Review Worker", "enabled": false, "state": "paused", "paused_at": "@now-6d", "paused_reason": "fixture rollback", "schedule_display": "every 120m", "model": "fixture-model", "provider": "fixture-provider", "skills": ["wolftac-review"], "last_run_at": "@now-6d", "last_status": "ok", "last_error": null, "next_run_at": null, "failure_streak": 0},
+    {"id": "a5d6e054f3fa", "name": "ROLLBACK (paused) Fixture Integrate Worker", "enabled": false, "state": "paused", "paused_at": "@now-6d", "paused_reason": "fixture rollback", "schedule_display": "every 2h", "model": "fixture-model", "provider": "fixture-provider", "skills": ["wolftac-integrate"], "last_run_at": "@now-6d", "last_status": "ok", "last_error": null, "next_run_at": null, "failure_streak": 0},
+    {"id": "000000000001", "name": "Unrelated fixture job", "enabled": true, "state": "scheduled", "schedule_display": "30 2 * * *", "last_status": null}
+  ],
+  "updated_at": "@now-10m"
+}
