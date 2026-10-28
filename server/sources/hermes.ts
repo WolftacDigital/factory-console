@@ -31,9 +31,29 @@ function readJson(path: string): Read<any> {
 }
 
 export function pickJob(raw: any): JobFields {
+  if (!isRecord(raw) || typeof raw.id !== "string") throw new Error("invalid job object");
   const out: any = {};
-  for (const f of JOB_FIELDS) if (raw && f in raw) out[f] = raw[f];
+  for (const f of JOB_FIELDS) {
+    if (!Object.hasOwn(raw, f)) continue;
+    const v = raw[f];
+    const valid = f === "enabled" ? typeof v === "boolean"
+      : f === "failure_streak" ? v === null || (typeof v === "number" && Number.isInteger(v) && v >= 0)
+      : f === "skills" ? v === null || (Array.isArray(v) && v.every((s) => typeof s === "string"))
+      : f === "last_run_at" || f === "next_run_at" || f === "paused_at" ? isTimestamp(v)
+      : v === null || typeof v === "string";
+    // Report the schema field, never the rejected value (it may contain private data).
+    if (!valid) throw new Error(`invalid job field: ${f}`);
+    out[f] = v;
+  }
   return out as JobFields;
+}
+
+function isRecord(v: unknown): v is Record<string, any> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+function isTimestamp(v: unknown): boolean {
+  return v === null || (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v) && Number.isFinite(Date.parse(v)));
 }
 
 export interface JobsFile { jobs: Record<string, JobFields>; error?: string }
@@ -43,8 +63,15 @@ function readJobs(home: string, rel: string): JobsFile {
   if (!r.ok) return { jobs: {}, error: r.reason.replace(home, "HERMES_HOME") };
   const list = Array.isArray(r.value?.jobs) ? r.value.jobs : null;
   if (!list) return { jobs: {}, error: `no jobs[] in ${rel}` };
-  const jobs: Record<string, JobFields> = {};
-  for (const j of list) if (j && typeof j.id === "string") jobs[j.id] = pickJob(j);
+  const jobs: Record<string, JobFields> = Object.create(null);
+  try {
+    for (const j of list) {
+      const job = pickJob(j);
+      jobs[job.id] = job;
+    }
+  } catch {
+    return { jobs: {}, error: `invalid job fields in ${rel}` };
+  }
   return { jobs };
 }
 
@@ -112,19 +139,34 @@ export function readHermes(home: string, opts: { fixtures?: boolean } = {}): Her
   const gk = readJson(join(home, "cron", "gatekeeper-state.json"));
   let lanes: Record<string, LaneState> | null = null;
   let lanesError: string | undefined;
-  if (gk.ok && gk.value && typeof gk.value.lanes === "object" && gk.value.lanes) {
-    lanes = {};
-    for (const [k, v] of Object.entries<any>(gk.value.lanes)) {
-      lanes[k] = { dispatched_at: v?.dispatched_at ?? null, job_last_run_at: v?.job_last_run_at ?? null };
+  if (gk.ok && isRecord(gk.value?.lanes)) {
+    lanes = Object.create(null);
+    for (const k of ["build", "review", "integrate"]) {
+      const v = gk.value.lanes[k];
+      if (v === undefined) continue;
+      if (!isRecord(v) || !isTimestamp(v.dispatched_at ?? null) || !isTimestamp(v.job_last_run_at ?? null)) {
+        lanes = null;
+        lanesError = "invalid lane fields in gatekeeper-state.json";
+        break;
+      }
+      lanes![k] = { dispatched_at: v.dispatched_at ?? null, job_last_run_at: v.job_last_run_at ?? null };
     }
   } else lanesError = gk.ok ? "gatekeeper-state.json has no lanes" : gk.reason.replace(home, "HERMES_HOME");
 
   const gw = readJson(join(home, "gateway_state.json"));
   let gateway: HermesRead["gateway"] = null;
   let gatewayError: string | undefined;
-  if (gw.ok && gw.value && typeof gw.value === "object") {
-    const platforms = Object.entries<any>(gw.value.platforms ?? {}).map(([name, p]) => ({ name, state: String(p?.state ?? "unknown") }));
-    gateway = { gateway_state: gw.value.gateway_state, active_agents: Number(gw.value.active_agents ?? 0), platforms };
+  if (gw.ok && isRecord(gw.value)) {
+    const v = gw.value;
+    const ps = v.platforms ?? {};
+    if ((v.gateway_state !== undefined && typeof v.gateway_state !== "string") ||
+        (v.active_agents !== undefined && (typeof v.active_agents !== "number" || !Number.isInteger(v.active_agents) || v.active_agents < 0)) ||
+        !isRecord(ps) || Object.values(ps).some((p) => !isRecord(p) || (p.state !== undefined && typeof p.state !== "string"))) {
+      gatewayError = "invalid fields in gateway_state.json";
+    } else {
+      const platforms = Object.entries(ps).map(([name, p]) => ({ name, state: p.state ?? "unknown" }));
+      gateway = { gateway_state: v.gateway_state, active_agents: v.active_agents ?? 0, platforms };
+    }
   } else gatewayError = gw.ok ? "gateway_state.json is not an object" : gw.reason.replace(home, "HERMES_HOME");
 
   const outputs: Record<string, RunOutput | null> = {};

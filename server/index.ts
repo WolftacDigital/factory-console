@@ -136,7 +136,14 @@ const MIME: Record<string, string> = {
 };
 
 function serveStatic(pathname: string): Response {
-  const rel = normalize(decodeURIComponent(pathname)).replace(/^([\\/])+/, "");
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return json({ error: "invalid path encoding" }, 400);
+  }
+  if (decoded.includes("\0")) return json({ error: "invalid path" }, 400);
+  const rel = normalize(decoded).replace(/^([\\/])+/, "");
   let file = resolve(DIST, rel);
   if (!file.startsWith(DIST + sep) && file !== DIST) return json({ error: "not found" }, 404);
   if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST, "index.html");

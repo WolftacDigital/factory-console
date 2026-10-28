@@ -93,21 +93,21 @@ export function buildSnapshot(
       status: st.status, reason: redact(st.reason),
       currentIssue: cur ? ref(cur) : null, currentNote: note,
       detail: {
-        lastRunAt: job?.last_run_at ?? null,
+        lastRunAt: redactOrNull(job?.last_run_at),
         lastStatus: redactOrNull(job?.last_status),
-        nextRunAt: job?.next_run_at ?? null,
+        nextRunAt: redactOrNull(job?.next_run_at),
         failureStreak: typeof job?.failure_streak === "number" ? job.failure_streak : null,
         lastError: redactOrNull(job?.last_error),
         pausedReason: redactOrNull(job?.paused_reason),
-        pausedAt: job?.paused_at ?? null,
-        outputFile: out?.file ?? null,
+        pausedAt: redactOrNull(job?.paused_at),
+        outputFile: redactOrNull(out?.file),
         outputExcerpt: (out?.lines ?? []).map((l) => redact(l)),
       },
     };
     if (s.kind === "gatekeeper" && h) {
       view.detail.gatekeeperLogs = Object.entries(h.gatekeeperLogs)
         .filter(([, v]) => v)
-        .map(([lane, v]) => ({ lane, file: v!.file, lines: v!.lines.map((l) => redact(l)) }));
+        .map(([lane, v]) => ({ lane, file: redact(v!.file), lines: v!.lines.map((l) => redact(l)) }));
     }
     return view;
   });
@@ -147,7 +147,7 @@ export function buildSnapshot(
       gatewayState: h?.gateway?.gateway_state ? redact(h.gateway.gateway_state) : null,
       activeAgents: h?.gateway ? h.gateway.active_agents ?? 0 : null,
       platforms: (h?.gateway?.platforms ?? []).map((p) => ({ name: redact(p.name), state: redact(p.state) })),
-      rollbackJobs: (h?.rollbackJobs ?? []).map((r) => ({ id: r.id, name: redact(r.name), state: r.state, pausedAt: r.pausedAt })),
+      rollbackJobs: (h?.rollbackJobs ?? []).map((r) => ({ id: r.id, name: redact(r.name), state: redact(r.state), pausedAt: redactOrNull(r.pausedAt) })),
     },
     zeus: {
       name: "Zeus", role: "Jon-Omen · remote", status: zs.status, label: redact(zs.reason),

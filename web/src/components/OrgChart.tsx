@@ -6,18 +6,20 @@ interface Props { snap: Snapshot; onOpen: (sel: Selection, el: HTMLElement) => v
 function StationNode({ s, onOpen }: { s: StationView; onOpen: Props["onOpen"] }) {
   const model = [s.model, s.provider].filter(Boolean).join(" / ") || "no model (script)";
   return (
-    <button type="button" className={`node st-${s.status.replace(" ", "_")}`} onClick={(e) => onOpen({ kind: "station", key: s.key }, e.currentTarget)} aria-label={`${s.name}, ${s.status}. Open details`}>
+    <div className={`node station-node st-${s.status.replace(" ", "_")}`}>
+      <button type="button" className="station-details" onClick={(e) => onOpen({ kind: "station", key: s.key }, e.currentTarget)} aria-label={`${s.name}, ${s.status}. Open details`}>
       <span className="name">{s.name}</span>
       <span className="role">{s.role}</span>
       <span className="meta"><span className="data">{model}</span></span>
       <span className="meta">schedule: <span className="data">{s.schedule ?? "—"}</span></span>
       <StatusChip status={s.status} />
+      </button>
       {s.status === "WORKING" && s.currentIssue && (
-        <span className="issue"><span className="mono">{s.currentIssue.identifier}</span> {s.currentIssue.title}</span>
+        <a className="issue" href={s.currentIssue.url} target="_blank" rel="noreferrer"><span className="mono">{s.currentIssue.identifier}</span> {s.currentIssue.title}</a>
       )}
       {s.status === "WORKING" && !s.currentIssue && s.currentNote && <span className="reason">{s.currentNote}</span>}
       {s.status === "UNKNOWN" && <span className="reason">{s.reason}</span>}
-    </button>
+    </div>
   );
 }
 
