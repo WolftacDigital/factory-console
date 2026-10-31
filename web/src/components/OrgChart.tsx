@@ -4,7 +4,7 @@ import { StatusChip } from "./StatusChip";
 interface Props { snap: Snapshot; onOpen: (sel: Selection, el: HTMLElement) => void }
 
 function StationNode({ s, onOpen }: { s: StationView; onOpen: Props["onOpen"] }) {
-  const model = [s.model, s.provider].filter(Boolean).join(" / ") || "no model (script)";
+  const model = [s.model, s.provider].filter(Boolean).join(" / ") || (s.key === "gatekeeper" ? "no model (script)" : "profile default model");
   return (
     <div className={`node station-node st-${s.status.replace(" ", "_")}`}>
       <button type="button" className="station-details" onClick={(e) => onOpen({ kind: "station", key: s.key }, e.currentTarget)} aria-label={`${s.name}, ${s.status}. Open details`}>
