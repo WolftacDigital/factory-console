@@ -1,0 +1,6 @@
+{
+  "jobs": [
+    {"id": "4e7a4d9c5fa4", "name": "Fixture Integrate Worker (Harper)", "enabled": true, "state": "scheduled", "paused_at": null, "paused_reason": null, "schedule_display": "every 120m", "model": "fixture-integrate-model", "provider": "fixture-provider", "skills": ["wolftac-integrate"], "last_run_at": "@now-40m", "last_status": "error", "last_error": "RuntimeError: fixture failure while rebasing (token=FAKE-fixture-value)", "next_run_at": "@now+80m", "failure_streak": 2, "prompt": "FIXTURE PROMPT MUST NEVER APPEAR"}
+  ],
+  "updated_at": "@now-40m"
+}

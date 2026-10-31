@@ -1,0 +1,6 @@
+{
+  "jobs": [
+    {"id": "8e5c37a23b91", "name": "Fixture Review Worker (Quinn)", "enabled": true, "state": "paused", "paused_at": "@now-1h", "paused_reason": "Paused by operator for fixture testing", "schedule_display": "every 120m", "model": "fixture-review-model", "provider": "fixture-provider", "skills": ["wolftac-review"], "last_run_at": "@now-3h", "last_status": "ok", "last_error": null, "next_run_at": null, "failure_streak": 0, "prompt": "FIXTURE PROMPT MUST NEVER APPEAR"}
+  ],
+  "updated_at": "@now-1h"
+}

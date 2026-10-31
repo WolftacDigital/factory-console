@@ -1,0 +1,8 @@
+{
+  "lanes": {
+    "build": {"dispatched_at": "@now-15m", "job_last_run_at": "@now-2h"},
+    "review": {"dispatched_at": "@now-4h", "job_last_run_at": "@now-3h"},
+    "integrate": {"dispatched_at": "@now-50m", "job_last_run_at": "@now-40m"}
+  },
+  "fingerprints": {"build": "fixture"}
+}

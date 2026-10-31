@@ -1,0 +1,11 @@
+{
+  "pid": 12345,
+  "argv": ["fixture-gateway", "--secret-flag"],
+  "gateway_state": "running",
+  "active_agents": 0,
+  "platforms": {
+    "telegram": {"state": "connected", "writer_pid": 111, "error_message": null},
+    "slack": {"state": "connected", "writer_pid": 222, "error_message": null}
+  },
+  "updated_at": "@now-1m"
+}
