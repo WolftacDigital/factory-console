@@ -1,9 +1,10 @@
 // Read-only Linear source: GraphQL queries only (no mutations exist in this file).
+// LINEAR_API_URL overrides the endpoint so tests can use a local mock.
 import { readFileSync } from "node:fs";
 import type { IssueLite } from "../status";
 import { resolveFixtureTimes } from "../fixtime";
 
-export const LINEAR_URL = "https://api.linear.app/graphql";
+export const LINEAR_URL = process.env.LINEAR_API_URL?.trim() || "https://api.linear.app/graphql";
 export const TEAM_NAME = "Wolftac Digital";
 export const QUEUE_LABEL = "Factory Queue";
 export const OPEN_STATES = ["Todo", "In Progress", "In Review", "Approved"];

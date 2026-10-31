@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { onAnnounce } from "./actions";
+import { ActionsPanel } from "./components/ActionsPanel";
 import { DetailDrawer } from "./components/DetailDrawer";
 import { FloorSlot } from "./components/FloorSlot";
 import { OrgChart } from "./components/OrgChart";
@@ -30,6 +32,8 @@ export function App() {
   const [announce, setAnnounce] = useState("");
   const opener = useRef<HTMLElement | null>(null);
   const prevSnap = useRef<Snapshot | null>(null);
+
+  useEffect(() => onAnnounce(setAnnounce), []);
 
   useEffect(() => {
     let es: EventSource | null = null;
@@ -106,12 +110,13 @@ export function App() {
         <main className="layout">
           <OrgChart snap={snap} onOpen={open} />
           <QueueBoard snap={snap} />
+          <ActionsPanel />
           <FloorSlot />
         </main>
       ) : (
         <p className="empty">Waiting for the first snapshot…</p>
       )}
-      <footer className="footer">Read-only · 127.0.0.1 only · no control actions</footer>
+      <footer className="footer">127.0.0.1 only · every control asks for confirmation and is logged</footer>
       {snap && sel && <DetailDrawer snap={snap} sel={sel} onClose={close} />}
     </div>
   );
