@@ -1,0 +1,45 @@
+/* Worker controls, confirmation dialogs and the action log. Tokens come from theme.css. */
+.controls { border: 1px solid var(--border); background: var(--bg-2); padding: 10px 12px; display: grid; gap: 8px; }
+.control-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: start; }
+.control { display: grid; gap: 4px; justify-items: start; flex: 1 1 110px; min-width: 0; }
+.control-why { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.control-result { margin: 0; font-size: 13px; overflow-wrap: anywhere; display: grid; gap: 2px; }
+.control-result.ok { color: var(--text); }
+.control-result.bad { color: var(--red); }
+.control-result.warn { color: var(--amber); }
+.control-backup { font-size: 11px; }
+
+.ctl { font: inherit; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; min-height: 32px; padding: 4px 12px; color: var(--text); background: transparent; border: 1px solid var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.ctl:hover { border-color: var(--amber); }
+.ctl.primary { background: var(--amber); border-color: var(--amber); color: var(--on-accent); }
+.ctl.small { min-height: 28px; padding: 2px 8px; font-size: 11px; }
+.ctl[aria-disabled="true"] { color: var(--muted); border-color: var(--graphite); border-style: dashed; cursor: not-allowed; }
+.ctl.busy { border-style: solid; }
+.spinner { width: 10px; height: 10px; border: 2px solid var(--muted); border-top-color: var(--amber); animation: ctl-spin 0.9s linear infinite; }
+@keyframes ctl-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.requeue { display: grid; gap: 4px; justify-items: start; }
+
+.confirm-layer { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; }
+.confirm-scrim { position: absolute; inset: 0; background: rgba(5, 7, 6, 0.7); }
+.confirm { position: relative; width: min(480px, 100%); max-height: 100%; overflow-y: auto; background: var(--bg-1); border: 1px solid var(--amber); padding: 16px; display: grid; gap: 12px; color: var(--text); }
+.confirm h2 { font-size: 20px; }
+.confirm p { margin: 0; overflow-wrap: anywhere; }
+.confirm #confirm-body { display: grid; gap: 8px; font-size: 14px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.reason-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.reason-field { font: inherit; font-size: 14px; width: 100%; color: var(--text); background: var(--bg-0); border: 1px solid var(--muted); padding: 8px; resize: vertical; }
+.reason-field:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.reason-error { color: var(--red); font-size: 13px; }
+
+.action-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 360px; overflow-y: auto; }
+.action-row { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 6px 8px; border: 1px solid var(--border); background: var(--bg-2); font-size: 12px; font-family: var(--font-mono); }
+.action-row .data { font-size: 12px; overflow-wrap: anywhere; }
+.action-time { color: var(--muted); }
+.action-name { font-weight: 500; }
+.action-result { color: var(--text); }
+.action-row.res-failed .action-result, .action-row.res-forbidden .action-result { color: var(--red); }
+.action-row.res-partial .action-result, .action-row.res-refused .action-result { color: var(--amber); }
+.action-note { flex-basis: 100%; color: var(--muted); overflow-wrap: anywhere; }
+.action-note.data { color: var(--cyan); font-size: 11px; }

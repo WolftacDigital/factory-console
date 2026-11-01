@@ -1,6 +1,9 @@
-// Wolftac Factory Console server. Read-only, bound to 127.0.0.1 only, no auth (local tool).
+// Wolftac Factory Console server. Bound to 127.0.0.1 only, no auth (local tool). Reads are open to the page;
+// control POSTs go through server/actions, which guards origin, token and content type.
 import { existsSync, statSync } from "node:fs";
 import { join, normalize, resolve, sep } from "node:path";
+import { createActions } from "./actions";
+import { defaultHermesExe, resolveHermesExe } from "./actions/hermes";
 import { buildSnapshot, type Snapshot } from "./snapshot";
 import { readHermes, type HermesRead } from "./sources/hermes";
 import { fetchLinearIssues, readLinearFixture, type LinearResult } from "./sources/linear";
@@ -11,6 +14,7 @@ const PORT = Number(process.env.PORT || 8095);
 const FIXTURES = process.env.FACTORY_FIXTURES?.trim() ? resolve(process.env.FACTORY_FIXTURES.trim()) : null;
 const HERMES_HOME = FIXTURES ?? (process.env.HERMES_HOME?.trim() || join(process.env.LOCALAPPDATA ?? "", "hermes"));
 const DIST = resolve(import.meta.dir, "..", "dist");
+const LINEAR_URL_OVERRIDE = process.env.LINEAR_API_URL?.trim() || undefined;
 
 const HERMES_POLL_MS = 5_000;
 const LINEAR_POLL_MS = 60_000;
@@ -31,6 +35,29 @@ let snapshot: (Snapshot & { updatedAt: string }) | null = null;
 let snapshotKey = "";
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
 const enc = new TextEncoder();
+
+const actions = createActions({
+  home: HERMES_HOME,
+  exe: resolveHermesExe(process.env, !!FIXTURES),
+  plannedExe: defaultHermesExe(),
+  dryRun: process.env.FACTORY_ACTIONS_DRYRUN === "1",
+  linearKey: process.env.LINEAR_API_KEY,
+  linearUrl: LINEAR_URL_OVERRIDE,
+  // Fixture mode never writes to Linear unless a mock endpoint is named explicitly.
+  linearAllowed: !FIXTURES || !!LINEAR_URL_OVERRIDE,
+  dataDir: process.env.FACTORY_DATA_DIR?.trim() ? resolve(process.env.FACTORY_DATA_DIR.trim()) : resolve(import.meta.dir, "..", ".data"),
+  read: () => {
+    pollHermes();
+    return { hermes, snapshot: buildSnapshot(hermes, hermesError, linear, zeus, Date.now(), FIXTURES ? "fixtures" : "live") };
+  },
+  onChanged: (what) => {
+    if (what === "linear") void pollLinear();
+    else {
+      pollHermes();
+      recompute();
+    }
+  },
+});
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -79,7 +106,7 @@ function broadcast(data: string) {
 
 function recompute() {
   try {
-    const next = buildSnapshot(hermes, hermesError, linear, zeus, Date.now(), FIXTURES ? "fixtures" : "live");
+    const next = actions.decorate(buildSnapshot(hermes, hermesError, linear, zeus, Date.now(), FIXTURES ? "fixtures" : "live"), hermes);
     const key = JSON.stringify(next);
     if (key === snapshotKey) return; // push only when content changes
     snapshotKey = key;
@@ -161,7 +188,10 @@ const server = Bun.serve({
   idleTimeout: 0, // SSE connections stay open; heartbeat keeps them alive
   fetch(req) {
     const url = new URL(req.url);
+    if (req.method === "POST" && url.pathname.startsWith("/api/actions/")) return actions.handlePost(req, url.pathname).then(withHeaders);
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "read-only" }, 405);
+    if (url.pathname === "/api/session") return json({ token: actions.token });
+    if (url.pathname === "/api/actions/log") return withHeaders(actions.logResponse(url.searchParams.get("limit")));
     if (url.pathname === "/api/health") return json({ ok: true });
     if (url.pathname === "/api/snapshot") return json(snapshot);
     if (url.pathname === "/api/stream") return stream(req);

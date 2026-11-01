@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { fmtTime, type Selection, type Snapshot } from "../types";
+import { Controls } from "./Controls";
 import { StatusChip } from "./StatusChip";
 
 interface Props { snap: Snapshot; sel: Selection; onClose: () => void }
@@ -37,6 +38,7 @@ export function DetailDrawer({ snap, sel, onClose }: Props) {
     body = (
       <>
         <StatusChip status={s.status} />
+        <Controls station={s} dryRun={!!snap.actions?.dryRun} />
         <dl>
           <dt>Status reason</dt><dd>{s.reason}</dd>
           {s.status === "WORKING" && (

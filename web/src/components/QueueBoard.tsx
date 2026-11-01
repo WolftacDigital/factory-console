@@ -1,4 +1,6 @@
+import { canRequeue } from "../actions";
 import type { Snapshot } from "../types";
+import { RequeueAction } from "./RequeueDialog";
 
 export function QueueBoard({ snap }: { snap: Snapshot }) {
   const board = snap.board;
@@ -27,6 +29,7 @@ export function QueueBoard({ snap }: { snap: Snapshot }) {
                         <span>{card.assignee ? `assignee: ${card.assignee}` : card.delegate ? `delegate: ${card.delegate}` : "unassigned"}</span>
                         {card.assignee && card.delegate && <span>delegate: {card.delegate}</span>}
                       </span>
+                      {canRequeue(c.name) && <RequeueAction card={card} from={c.name} linear={snap.actions?.linear} dryRun={!!snap.actions?.dryRun} />}
                     </li>
                   ))}
                 </ul>

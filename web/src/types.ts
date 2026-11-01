@@ -3,7 +3,11 @@ export type Status = "WORKING" | "IDLE" | "PAUSED" | "ERROR" | "UNKNOWN" | "ON D
 export interface SourceState { state: "connected" | "disconnected" | "degraded" | "unconfigured"; reason: string | null }
 export interface IssueRef { identifier: string; title: string; url: string }
 export interface Card extends IssueRef { lane: string; assignee: string | null; delegate: string | null; project: string | null }
+export interface ControlState { enabled: boolean; reason: string | null }
+export type ActionVerb = "pause" | "resume" | "run";
 export interface StationView {
+  /** Added by the server's action layer. */
+  controls?: Record<ActionVerb, ControlState>;
   key: string; name: string; role: string; profile: string; jobId: string;
   model: string | null; provider: string | null; schedule: string | null; skills: string[];
   status: Status; reason: string; currentIssue: IssueRef | null; currentNote: string | null;
@@ -14,7 +18,17 @@ export interface StationView {
     gatekeeperLogs?: { lane: string; file: string; lines: string[] }[];
   };
 }
+export interface ActionsStatus {
+  hermes: { available: boolean; reason: string | null };
+  linear: { available: boolean; reason: string | null };
+  dryRun: boolean;
+}
+export interface ActionLogEntry {
+  ts: string; action: string; target: string | null; profile: string | null; jobId: string | null; issue: string | null;
+  reason: string | null; result: string; error: string | null; backup: string | null; durationMs: number; command?: string | null;
+}
 export interface Snapshot {
+  actions?: ActionsStatus;
   updatedAt: string;
   mode: "live" | "fixtures";
   sources: { hermes: SourceState; linear: SourceState; zeus: SourceState };
