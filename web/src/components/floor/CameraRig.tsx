@@ -33,6 +33,15 @@ export function CameraRig({ resetCount, reduced }: { resetCount: number; reduced
   const seenReset = useRef(resetCount);
 
   const apply = useCallback((pose: CameraPose) => {
+    // Drop leftover damping motion first. Dragging against a limit leaves a residual rotation
+    // that the next update() would replay, pulling RESET VIEW straight back to that limit.
+    const c = controls.current;
+    if (c) {
+      const damping = c.enableDamping;
+      c.enableDamping = false;
+      c.update();
+      c.enableDamping = damping;
+    }
     camera.position.set(...pose.position);
     controls.current?.target.set(...pose.target);
     camera.lookAt(...pose.target);
