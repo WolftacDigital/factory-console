@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DetailDrawer } from "./components/DetailDrawer";
-import { FloorSlot } from "./components/FloorSlot";
+import { FloorPanel } from "./components/floor/FloorPanel";
 import { OrgChart } from "./components/OrgChart";
 import { QueueBoard } from "./components/QueueBoard";
 import type { Selection, Snapshot, SourceState } from "./types";
@@ -106,7 +106,7 @@ export function App() {
         <main className="layout">
           <OrgChart snap={snap} onOpen={open} />
           <QueueBoard snap={snap} />
-          <FloorSlot />
+          <FloorPanel snap={snap} connected={connected} onOpen={open} />
         </main>
       ) : (
         <p className="empty">Waiting for the first snapshot…</p>

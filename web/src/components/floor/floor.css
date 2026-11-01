@@ -1,0 +1,50 @@
+/* 3D floor. Always dark: the scene is the Wolftac v4 palette whatever the page theme is. */
+.panel.floor { grid-template-columns: minmax(0, 1fr); }
+.floor-stage { position: relative; isolation: isolate; height: clamp(360px, 52vw, 680px); background: #050706; border: 1px solid var(--border); overflow: hidden; cursor: grab; }
+.floor-stage:active { cursor: grabbing; }
+.floor-stage.hovering { cursor: pointer; }
+.floor-stage.disconnected > div:first-child { opacity: 0.4; }
+
+.floor-label { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 11px; line-height: 1.25; color: #e2e8f0; white-space: nowrap; text-align: center; user-select: none; display: grid; justify-items: center; }
+.floor-label .state { font-size: 9px; letter-spacing: 0.08em; color: #94a3b8; }
+.floor-label .more { font-size: 10px; color: #94a3b8; width: max-content; max-width: 220px; white-space: normal; background: #0a0d0b; border: 1px solid #26302b; padding: 2px 6px; }
+.floor-label .remote { font-size: 9px; letter-spacing: 0.08em; color: #050706; background: #94a3b8; padding: 0 4px; }
+.floor-label .glyph { font-weight: 500; }
+.floor-label.unit { background: rgba(5, 7, 6, 0.72); padding: 1px 5px; width: max-content; max-width: 112px; white-space: normal; }
+.floor-label.st-WORKING .state, .floor-label.st-WORKING .glyph { color: #ff5e00; }
+.floor-label.st-ERROR .state, .floor-label.st-ERROR .glyph { color: #ff003c; }
+.floor-label.crate { color: #00f0ff; font-size: 10px; }
+.floor-label.crate.stack { font-weight: 500; font-size: 12px; }
+.floor-label.zone { color: #94a3b8; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: block; }
+.floor-label.zone .count { color: #00f0ff; }
+.floor-label.zone-empty { color: #5b6e64; font-size: 18px; }
+.floor-label.floor-message { color: #e2e8f0; font-size: 14px; letter-spacing: 0.08em; background: rgba(5, 7, 6, 0.8); padding: 4px 10px; }
+
+.floor-reset { position: absolute; top: 8px; right: 8px; z-index: 6; font-family: var(--font-mono); font-size: 12px; color: #e2e8f0; background: #0a0d0b; border: 1px solid #26302b; padding: 6px 10px; cursor: pointer; }
+.floor-reset:hover { border-color: #ff5e00; }
+.floor-reconnect { position: absolute; top: 8px; left: 8px; z-index: 6; font-family: var(--font-mono); font-size: 12px; color: #e2e8f0; background: #0a0d0b; border: 1px solid #ff003c; padding: 6px 10px; }
+
+/* Visually hidden, focusable mirror of every object. The focused entry becomes visible. */
+.floor-mirror { position: absolute; left: 8px; bottom: 8px; z-index: 6; margin: 0; padding: 0; list-style: none; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.floor-mirror:focus-within { width: auto; height: auto; max-width: calc(100% - 16px); overflow: visible; clip: auto; }
+.floor-mirror:focus-within li:not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.floor-mirror button { font-family: var(--font-mono); font-size: 12px; text-align: left; color: #e2e8f0; background: #0a0d0b; border: 1px solid #ff5e00; padding: 4px 8px; cursor: pointer; }
+
+.floor-card { position: absolute; top: 44px; right: 8px; z-index: 7; width: min(320px, calc(100% - 16px)); max-height: calc(100% - 52px); overflow-y: auto; display: grid; gap: 8px; color: #e2e8f0; background: #0a0d0b; border: 1px solid #ff5e00; padding: 12px; font-size: 13px; }
+.floor-card header { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.floor-card h3 { font-family: var(--font-mono); font-size: 14px; font-weight: 500; color: #00f0ff; letter-spacing: 0; }
+.floor-card .close { font-family: var(--font-mono); font-size: 11px; color: #e2e8f0; background: transparent; border: 1px solid #26302b; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+.floor-card .title { margin: 0; overflow-wrap: anywhere; }
+.floor-card dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0; }
+.floor-card dt { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; }
+.floor-card dd { margin: 0; overflow-wrap: anywhere; }
+.floor-card a { color: #ff5e00; }
+.floor-card ul { margin: 0; padding-left: 16px; display: grid; gap: 4px; }
+
+/* Narrow panels: tighter labels so stations and zones stay readable. Glyph plus name still carry the state. */
+@media (max-width: 560px) {
+  .floor-label.unit { font-size: 8px; max-width: 56px; padding: 0 2px; }
+  .floor-label.unit .state { display: none; }
+  .floor-label.crate { font-size: 8px; }
+  .floor-label.zone { font-size: 7px; letter-spacing: 0; max-width: 48px; white-space: normal; }
+}
