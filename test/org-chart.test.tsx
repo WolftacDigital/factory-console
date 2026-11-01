@@ -25,3 +25,13 @@ test("WORKING node renders an issue link beside, never inside, its detail button
   expect(detailLabels.some((l) => l.includes("Build · agentic (Mason), WORKING. Open details"))).toBe(true);
   expect(nestedInteractive).toBe(0);
 });
+
+test("an agent job with no model pin reads as the profile default, only the Gatekeeper as a script", () => {
+  const base = buildSnapshot(readHermes(fixture, { fixtures: true }), null,
+    readLinearFixture(join(fixture, "linear.json")), { configured: false }, Date.now(), "fixtures");
+  const snap = { ...base, updatedAt: new Date().toISOString(),
+    stations: base.stations.map((s) => s.key === "integrate" || s.key === "gatekeeper" ? { ...s, model: null, provider: null } : s) };
+  const html = renderToStaticMarkup(<OrgChart snap={snap} onOpen={() => {}} />);
+  expect(html.match(/no model \(script\)/g)).toHaveLength(1);
+  expect(html.match(/profile default model/g)).toHaveLength(1);
+});
