@@ -84,7 +84,8 @@ export function Crate({ id, x, z, label, title, stacked, reduced, hovered, posit
             <mesh geometry={BOX}>
               <meshStandardMaterial color={color} flatShading />
             </mesh>
-            <lineSegments>
+            {/* Decorative edges must not steal adjacent crate hits (line threshold is 1 world unit). */}
+            <lineSegments raycast={() => null}>
               <edgesGeometry args={[BOX]} />
               <lineBasicMaterial color={edge} />
             </lineSegments>

@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { buildSnapshot } from "../../../../server/snapshot";
 import { readHermes } from "../../../../server/sources/hermes";
 import { readLinearFixture } from "../../../../server/sources/linear";
-import type { Snapshot, Status } from "../../types";
-import { computeLayout, defaultCamera, MAX_VISIBLE, orderCards, overflowId, parseCamera, slotPosition, ZONE_ORDER, type FloorCard } from "./layout";
+import type { Card, Snapshot, Status } from "../../types";
+import { computeLayout, defaultCamera, MAX_VISIBLE, overflowId, parseCamera, slotPosition, ZONE_ORDER } from "./layout";
 import { easeInOut, emissiveScale, frameMode } from "./motion";
 import { unitLook } from "./palette";
 
@@ -13,8 +13,8 @@ const mixed = (): Snapshot => ({
   ...buildSnapshot(readHermes(fixture, { fixtures: true }), null, readLinearFixture(join(fixture, "linear.json")), { configured: false }, Date.now(), "fixtures"),
   updatedAt: "2026-01-01T00:00:00.000Z",
 });
-const card = (n: number, updatedAt?: string): FloorCard => ({ identifier: `FX-${n}`, title: `Fixture ${n}`, url: `https://linear.app/fixture/issue/FX-${n}`, lane: "agentic", assignee: null, delegate: null, project: null, updatedAt });
-const withColumn = (name: string, cards: FloorCard[]): Snapshot => {
+const card = (n: number): Card => ({ identifier: `FX-${n}`, title: `Fixture ${n}`, url: `https://linear.app/fixture/issue/FX-${n}`, lane: "agentic", assignee: null, delegate: null, project: null });
+const withColumn = (name: string, cards: Card[]): Snapshot => {
   const s = mixed();
   s.board = { columns: ZONE_ORDER.map((c) => ({ name: c, label: c, cards: c === name ? cards : [] })) };
   return s;
@@ -49,20 +49,28 @@ describe("computeLayout", () => {
     expect(new Set(l.crates.map((c) => c.identifier)).size).toBe(l.crates.length);
   });
 
-  test("orders a zone by updatedAt, oldest first", () => {
-    const l = computeLayout(withColumn("Todo", [card(1, "2026-03-01T00:00:00Z"), card(2, "2026-01-01T00:00:00Z"), card(3, "2026-02-01T00:00:00Z")]));
-    expect(l.crates.map((c) => c.identifier)).toEqual(["FX-2", "FX-3", "FX-1"]);
+  test("keeps board-card order without mutating the snapshot", () => {
+    const s = withColumn("Todo", [card(3), card(1), card(2)]);
+    const before = JSON.stringify(s);
+    const l = computeLayout(s);
+    expect(l.crates.map((c) => c.identifier)).toEqual(["FX-3", "FX-1", "FX-2"]);
+    expect(JSON.stringify(s)).toBe(before);
     const zoneX = l.zones[0].x;
     expect({ x: l.crates[0].x, z: l.crates[0].z }).toEqual(slotPosition(zoneX, 0));
     expect({ x: l.crates[2].x, z: l.crates[2].z }).toEqual(slotPosition(zoneX, 2));
   });
 
-  test("cards without updatedAt keep the board's order", () => {
-    expect(orderCards([card(3), card(1), card(2)]).map((c) => c.identifier)).toEqual(["FX-3", "FX-1", "FX-2"]);
+  test("real snapshot projection and floor preserve identical column order", () => {
+    const s = mixed();
+    const layout = computeLayout(s);
+    for (const col of s.board!.columns) {
+      expect(layout.issues.filter((i) => i.state === col.name).map((i) => i.identifier)).toEqual(col.cards.map((c) => c.identifier));
+      expect(col.cards.every((c) => !("updatedAt" in c))).toBe(true);
+    }
   });
 
-  test("13 crates give 12 crates plus a +1 stack holding the newest", () => {
-    const cards = Array.from({ length: 13 }, (_, i) => card(i + 1, new Date(Date.UTC(2026, 0, i + 1)).toISOString()));
+  test("13 crates give 12 crates plus a +1 stack holding the final board card", () => {
+    const cards = Array.from({ length: 13 }, (_, i) => card(i + 1));
     const l = computeLayout(withColumn("In Review", cards));
     expect(l.crates).toHaveLength(MAX_VISIBLE);
     expect(l.overflows).toHaveLength(1);

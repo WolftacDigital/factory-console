@@ -15,8 +15,6 @@ const SLOT = 1;
 const STATION_Z = -4.5;
 const STATION_SPAN = 22;
 
-/** updatedAt is optional: the snapshot does not carry it today, so ties keep the board's order. */
-export type FloorCard = Card & { updatedAt?: string };
 
 export interface UnitPlacement {
   id: string;
@@ -53,18 +51,6 @@ export interface FloorLayout {
   boardAvailable: boolean;
 }
 
-const stamp = (c: FloorCard): number => {
-  const t = c.updatedAt ? Date.parse(c.updatedAt) : NaN;
-  return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
-};
-
-/** Oldest first. Array.prototype.sort is stable, so equal or missing stamps keep their board order. */
-export function orderCards(cards: FloorCard[]): FloorCard[] {
-  return [...cards].sort((a, b) => {
-    const x = stamp(a), y = stamp(b);
-    return x === y ? 0 : x < y ? -1 : 1;
-  });
-}
 
 export const crateId = (identifier: string) => `crate:${identifier}`;
 export const overflowId = (zone: string) => `overflow:${zone}`;
@@ -93,9 +79,10 @@ export function computeLayout(snap: Snapshot): FloorLayout {
   ZONE_ORDER.forEach((name, i) => {
     const column = snap.board?.columns.find((c) => c.name === name);
     const x = (i - (ZONE_ORDER.length - 1) / 2) * ZONE_STEP;
-    const ordered = orderCards(column?.cards ?? []);
+    // The board owns ordering and the seven-day Done window. Do not infer fields.
+    const ordered = column?.cards ?? [];
     zones.push({ name, label: column?.label ?? name, x, z: CONVEYOR_Z, total: ordered.length });
-    const place = (c: FloorCard, objectId: string): IssuePlacement => ({ identifier: c.identifier, title: c.title, url: c.url, state: name, lane: c.lane, objectId });
+    const place = (c: Card, objectId: string): IssuePlacement => ({ identifier: c.identifier, title: c.title, url: c.url, state: name, lane: c.lane, objectId });
     ordered.slice(0, MAX_VISIBLE).forEach((c, slot) => {
       const issue = place(c, crateId(c.identifier));
       issues.push(issue);
