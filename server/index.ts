@@ -5,6 +5,7 @@ import { buildSnapshot, type Snapshot } from "./snapshot";
 import { readHermes, type HermesRead } from "./sources/hermes";
 import { fetchLinearIssues, readLinearFixture, type LinearResult } from "./sources/linear";
 import { fetchZeus, type ZeusResult } from "./sources/zeus";
+import { isAllowedHost } from "./host";
 
 const HOST = "127.0.0.1";
 const PORT = Number(process.env.PORT || 8095);
@@ -159,7 +160,8 @@ const server = Bun.serve({
   hostname: HOST,
   port: PORT,
   idleTimeout: 0, // SSE connections stay open; heartbeat keeps them alive
-  fetch(req) {
+  fetch(req): Response {
+    if (!isAllowedHost(req.headers.get("host"), server.port!)) return json({ error: "forbidden host" }, 403);
     const url = new URL(req.url);
     if (req.method !== "GET" && req.method !== "HEAD") return json({ error: "read-only" }, 405);
     if (url.pathname === "/api/health") return json({ ok: true });
