@@ -4,7 +4,7 @@ import { buildSnapshot } from "../../../../server/snapshot";
 import { readHermes } from "../../../../server/sources/hermes";
 import { readLinearFixture } from "../../../../server/sources/linear";
 import type { Card, Snapshot, Status } from "../../types";
-import { computeLayout, defaultCamera, MAX_VISIBLE, overflowId, parseCamera, slotPosition, ZONE_ORDER } from "./layout";
+import { computeLayout, defaultCamera, MAX_VISIBLE, overflowId, overflowStarts, parseCamera, slotPosition, ZONE_ORDER } from "./layout";
 import { easeInOut, emissiveScale, frameMode } from "./motion";
 import { unitLook } from "./palette";
 
@@ -107,6 +107,44 @@ describe("computeLayout", () => {
     expect(l.boardAvailable).toBe(false);
     expect(l.zones).toHaveLength(5);
     expect(l.crates).toHaveLength(0);
+  });
+});
+
+describe("overflow mount origins", () => {
+  const cards = Array.from({ length: 13 }, (_, i) => card(i + 1));
+  test("a stacked issue changing zone starts at its old stack", () => {
+    const before = computeLayout(withColumn("Todo", cards));
+    const snap = withColumn("Todo", cards.slice(0, 12));
+    snap.board!.columns.find((c) => c.name === "In Progress")!.cards = [cards[12]];
+    const after = computeLayout(snap);
+    expect([...overflowStarts(before, after)]).toEqual([["FX-13", { x: before.overflows[0].x, z: before.overflows[0].z }]]);
+    expect(after.crates.find((c) => c.identifier === "FX-13")!.state).toBe("In Progress");
+  });
+  test("promotion into a vacated slot retains the disappeared stack's position", () => {
+    const before = computeLayout(withColumn("Todo", cards));
+    const after = computeLayout(withColumn("Todo", cards.slice(1)));
+    expect(after.overflows).toHaveLength(0);
+    expect(overflowStarts(before, after).get("FX-13")).toEqual({ x: before.overflows[0].x, z: before.overflows[0].z });
+    expect(after.crates[11].identifier).toBe("FX-13");
+    expect(after.crates[11]).toMatchObject(slotPosition(after.zones[0].x, 11));
+  });
+  test("initial loads, new issues, unchanged stacks and existing visible crates get no mount override", () => {
+    const before = computeLayout(withColumn("Todo", cards));
+    const after = computeLayout(withColumn("In Progress", [card(1), card(99)]));
+    expect(overflowStarts(null, before).size).toBe(0);
+    expect(overflowStarts(before, before).size).toBe(0);
+    expect(overflowStarts(before, after).size).toBe(0);
+  });
+  test("each zone supplies its own stack origin without mutating layouts", () => {
+    const snap = withColumn("Todo", cards);
+    snap.board!.columns.find((c) => c.name === "Approved")!.cards = cards.map((_, i) => card(i + 101));
+    const before = computeLayout(snap);
+    const after = computeLayout(withColumn("In Progress", [card(13), card(113)]));
+    const saved = JSON.stringify([before, after]);
+    const starts = overflowStarts(before, after);
+    expect(starts.get("FX-13")).toEqual({ x: before.overflows[0].x, z: before.overflows[0].z });
+    expect(starts.get("FX-113")).toEqual({ x: before.overflows[1].x, z: before.overflows[1].z });
+    expect(JSON.stringify([before, after])).toBe(saved);
   });
 });
 

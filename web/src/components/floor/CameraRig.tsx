@@ -1,5 +1,5 @@
 import { OrbitControls } from "@react-three/drei";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useRef } from "react";
 import { CAMERA_KEY, defaultCamera, MAX_DISTANCE, MAX_POLAR, MIN_DISTANCE, parseCamera, type CameraPose } from "./layout";
 
@@ -31,6 +31,9 @@ export function CameraRig({ resetCount, reduced }: { resetCount: number; reduced
   const custom = useRef(false); // true once the viewer has a view of their own
   const restored = useRef(false);
   const seenReset = useRef(resetCount);
+  const pendingSave = useRef(false);
+  const lastPose = useRef<CameraPose | null>(null);
+  const stillFrames = useRef(0);
 
   const apply = useCallback((pose: CameraPose) => {
     // Drop leftover damping motion first. Dragging against a limit leaves a residual rotation
@@ -68,16 +71,41 @@ export function CameraRig({ resetCount, reduced }: { resetCount: number; reduced
     if (resetCount === seenReset.current) return;
     seenReset.current = resetCount;
     custom.current = false;
+    pendingSave.current = false;
+    lastPose.current = null;
+    stillFrames.current = 0;
     clearSaved();
     apply(defaultCamera(size.width / size.height));
   }, [resetCount, apply, size.width, size.height]);
 
-  const onEnd = useCallback(() => {
-    const c = controls.current;
-    if (!c) return;
+  const onStart = useCallback(() => {
     custom.current = true;
-    save({ position: [camera.position.x, camera.position.y, camera.position.z], target: [c.target.x, c.target.y, c.target.z] });
-  }, [camera]);
+    pendingSave.current = false;
+    lastPose.current = null;
+    stillFrames.current = 0;
+  }, []);
+
+  const onEnd = useCallback(() => {
+    pendingSave.current = true;
+    invalidate();
+  }, [invalidate]);
+
+  // Drei updates controls at priority -1. Observe the actual post-damping pose here,
+  // including tiny residual motion below OrbitControls' change-event threshold.
+  useFrame(() => {
+    const c = controls.current;
+    if (!pendingSave.current || !custom.current || !c) return;
+    const pose: CameraPose = { position: [camera.position.x, camera.position.y, camera.position.z], target: [c.target.x, c.target.y, c.target.z] };
+    const last = lastPose.current;
+    const stable = last && pose.position.every((n, i) => Math.abs(n - last.position[i]) < 1e-6)
+      && pose.target.every((n, i) => Math.abs(n - last.target[i]) < 1e-6);
+    stillFrames.current = stable ? stillFrames.current + 1 : 0;
+    lastPose.current = pose;
+    if (stillFrames.current >= 3) {
+      save(pose);
+      pendingSave.current = false;
+    } else invalidate();
+  });
 
   return (
     <OrbitControls
@@ -89,6 +117,7 @@ export function CameraRig({ resetCount, reduced }: { resetCount: number; reduced
       maxDistance={MAX_DISTANCE}
       minPolarAngle={0.1}
       maxPolarAngle={MAX_POLAR}
+      onStart={onStart}
       onEnd={onEnd}
     />
   );

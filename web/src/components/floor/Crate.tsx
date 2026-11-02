@@ -15,6 +15,7 @@ interface Props {
   z: number;
   label: string;
   title?: string;
+  initialPosition?: { x: number; z: number };
   stacked?: boolean;
   reduced: boolean;
   hovered: boolean;
@@ -24,17 +25,19 @@ interface Props {
 }
 
 /** One issue, or a zone's +N overflow stack. Glides to a new zone over 1.5 s; jumps with reduced motion. */
-export function Crate({ id, x, z, label, title, stacked, reduced, hovered, positions, onHover, onSelect }: Props) {
+export function Crate({ id, x, z, label, title, initialPosition, stacked, reduced, hovered, positions, onHover, onSelect }: Props) {
   const group = useRef<Group>(null);
-  const glide = useRef<{ from: Vector3; to: Vector3; start: number } | null>(null);
+  const glide = useRef<{ from: Vector3; to: Vector3; start: number; duration: number } | null>(null);
+  const fromStack = useRef(!!initialPosition);
   const invalidate = useThree((s) => s.invalidate);
 
-  // Starts at its target; later target changes are handled by the glide effect below.
+  // A newly visible issue can start at its previous stack. Never replay this on rerenders.
   const placed = useRef(false);
   useLayoutEffect(() => {
     const g = group.current!;
     if (!placed.current) {
-      g.position.set(x, CRATE_Y, z);
+      const start = reduced ? undefined : initialPosition;
+      g.position.set(start?.x ?? x, CRATE_Y, start?.z ?? z);
       placed.current = true;
     }
     const map = positions.current;
@@ -43,15 +46,18 @@ export function Crate({ id, x, z, label, title, stacked, reduced, hovered, posit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, positions]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const g = group.current!;
     const to = new Vector3(x, CRATE_Y, z);
+    // Leave a frame/commit margin inside the 1.5 s stream-to-arrival budget.
+    const duration = fromStack.current ? GLIDE_MS - 100 : GLIDE_MS;
+    fromStack.current = false;
     if (g.position.equals(to)) return;
     if (reduced) {
       glide.current = null;
       g.position.copy(to);
     } else {
-      glide.current = { from: g.position.clone(), to, start: performance.now() };
+      glide.current = { from: g.position.clone(), to, start: performance.now(), duration };
     }
     invalidate();
   }, [x, z, reduced, invalidate]);
@@ -59,7 +65,7 @@ export function Crate({ id, x, z, label, title, stacked, reduced, hovered, posit
   useFrame(() => {
     const m = glide.current;
     if (!m || !group.current) return;
-    const t = (performance.now() - m.start) / GLIDE_MS;
+    const t = (performance.now() - m.start) / m.duration;
     group.current.position.lerpVectors(m.from, m.to, easeInOut(t));
     if (t >= 1) glide.current = null;
     else invalidate();
