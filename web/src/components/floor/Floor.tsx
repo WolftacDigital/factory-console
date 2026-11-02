@@ -1,11 +1,11 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Vector3 } from "three";
 import type { Selection, Snapshot } from "../../types";
 import { CameraRig } from "./CameraRig";
 import { Conveyor } from "./Conveyor";
 import { Beam, Crate } from "./Crate";
-import { computeLayout, crateId, type IssuePlacement, type UnitPlacement } from "./layout";
+import { computeLayout, crateId, overflowStarts, type FloorLayout, type IssuePlacement, type UnitPlacement } from "./layout";
 import { frameMode, type FrameMode } from "./motion";
 import { PALETTE, unitLook } from "./palette";
 import { Station } from "./Station";
@@ -81,6 +81,10 @@ function IssueCard({ issue, onClose }: { issue: IssuePlacement; onClose: () => v
 
 export function Floor({ snap, connected, onOpen }: Props) {
   const layout = useMemo(() => computeLayout(snap), [snap]);
+  // Commit history, not render history: unrelated renders must not erase mount origins.
+  const previous = useRef<FloorLayout | null>(null);
+  const starts = useMemo(() => overflowStarts(previous.current, layout), [layout]);
+  useLayoutEffect(() => { previous.current = layout; }, [layout]);
   const reduced = useReducedMotion();
   const hidden = useTabHidden();
   const [hover, setHover] = useState<string | null>(null);
@@ -156,6 +160,7 @@ export function Floor({ snap, connected, onOpen }: Props) {
             id={crateId(c.identifier)}
             x={c.x}
             z={c.z}
+            initialPosition={starts.get(c.identifier)}
             label={c.identifier}
             title={c.title}
             reduced={reduced}

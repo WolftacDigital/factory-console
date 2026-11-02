@@ -105,6 +105,19 @@ export function computeLayout(snap: Snapshot): FloorLayout {
   return { units, zones, crates, overflows, beams, issues, boardAvailable: !!snap.board };
 }
 
+/** Only newly visible issues that were stacked have a historical mount position. */
+export function overflowStarts(previous: FloorLayout | null, next: FloorLayout): Map<string, { x: number; z: number }> {
+  const starts = new Map<string, { x: number; z: number }>();
+  if (!previous) return starts;
+  const visible = new Set(next.crates.map((c) => c.identifier));
+  for (const stack of previous.overflows) {
+    for (const id of stack.identifiers) {
+      if (visible.has(id)) starts.set(id, { x: stack.x, z: stack.z });
+    }
+  }
+  return starts;
+}
+
 // Camera pose. Kept here so its validation is pure and tested.
 export type Vec3 = [number, number, number];
 export interface CameraPose { position: Vec3; target: Vec3 }
